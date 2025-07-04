@@ -5,6 +5,7 @@ import com.yuneshtimsina.shopsmart.model.User;
 import com.yuneshtimsina.shopsmart.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
@@ -42,13 +43,21 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 if (user != null) {
                     UsernamePasswordAuthenticationToken authToken =
                             new UsernamePasswordAuthenticationToken(
-                                    user, null, Collections.emptyList());
+                                    user,
+                                    null,
+                                    Collections.singletonList(new SimpleGrantedAuthority(user.getRole().getName()))
+                            );
                     authToken.setDetails(
                             new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                 }
+            } else {
+                // Invalid token: immediately reject
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                return;
             }
         }
+
 
         filterChain.doFilter(request, response);
     }
